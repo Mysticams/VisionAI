@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CameraScreen() {
-  const cameraRef = useRef<any>(null);
+  const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
@@ -26,29 +26,26 @@ export default function CameraScreen() {
   }
 
   const takePicture = async () => {
-    if (!cameraRef.current || loading) return;
+    if (loading) return;
 
     try {
       setLoading(true);
 
-      const photo = await cameraRef.current.takePictureAsync({
+      const photo = await cameraRef.current?.takePictureAsync({
         quality: 1,
-        base64: false,
         skipProcessing: false,
       });
 
-      console.log("CAPTURE RESULT:", photo);
+      console.log("CAPTURE:", photo);
 
-      const uri = photo?.uri ?? photo?.assets?.[0]?.uri;
-
-      if (!uri) {
+      if (!photo?.uri) {
         Alert.alert("Error", "No image captured");
         return;
       }
 
       router.push({
-        pathname: "/previewScreen", // ✅ FIXED HERE
-        params: { photoUri: uri },
+        pathname: "/previewScreen",
+        params: { photoUri: photo.uri },
       });
     } catch (e) {
       console.log(e);
@@ -62,11 +59,7 @@ export default function CameraScreen() {
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
 
-      <TouchableOpacity
-        style={styles.captureBtn}
-        onPress={takePicture}
-        disabled={loading}
-      >
+      <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
         <Text style={{ color: "#fff" }}>
           {loading ? "Capturing..." : "Capture"}
         </Text>

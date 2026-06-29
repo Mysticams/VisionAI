@@ -3,11 +3,9 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function PreviewScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ photoUri?: string }>();
+  const { photoUri } = useLocalSearchParams<{ photoUri?: string }>();
 
-  const uri = Array.isArray(params.photoUri)
-    ? params.photoUri[0]
-    : params.photoUri;
+  const uri = Array.isArray(photoUri) ? photoUri[0] : photoUri;
 
   console.log("PREVIEW URI:", uri);
 
@@ -22,13 +20,12 @@ export default function PreviewScreen() {
       )}
 
       <View style={styles.row}>
-        <TouchableOpacity style={styles.retake} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.btn} onPress={() => router.back()}>
           <Text style={styles.btnText}>Retake</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.analyze}
-          disabled={!uri}
+          style={[styles.btn, { backgroundColor: "#2E5BBA" }]}
           onPress={() =>
             router.push({
               pathname: "/ResultScreen",
@@ -44,18 +41,22 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000", padding: 15 },
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+    padding: 16,
+  },
 
   title: {
     color: "#fff",
     textAlign: "center",
     fontSize: 18,
-    marginVertical: 10,
+    marginBottom: 10,
   },
 
   image: {
-    flex: 1,
     width: "100%",
+    height: 400,
     backgroundColor: "#111",
     borderRadius: 10,
   },
@@ -66,17 +67,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
 
-  retake: {
+  btn: {
     flex: 1,
     backgroundColor: "#555",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-
-  analyze: {
-    flex: 1,
-    backgroundColor: "#2E5BBA",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",

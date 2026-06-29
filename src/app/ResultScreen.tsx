@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -9,7 +10,8 @@ import {
   View,
 } from "react-native";
 
-import { analyzeImage, imageToBase64 } from "../../lib/gemini";
+// 👉 YOUR GEMINI FUNCTION (must accept base64)
+import { analyzeImage } from "../../lib/gemini";
 
 export default function ResultScreen() {
   const { photoUri } = useLocalSearchParams<{ photoUri: string }>();
@@ -18,39 +20,50 @@ export default function ResultScreen() {
   const [result, setResult] = useState("");
 
   useEffect(() => {
-    runAnalysis();
+    run();
   }, []);
 
-  async function runAnalysis() {
+  const run = async () => {
     try {
       setLoading(true);
 
       if (!photoUri) {
-        setResult("No image received.");
+        setResult("No image URI received.");
         return;
       }
 
-      // 🔥 FIX: convert here (NOT in previous screen)
-      const base64 = await imageToBase64(photoUri);
+      // 🔥 STEP 1: Convert file → base64
+      const base64 = await FileSystem.readAsStringAsync(photoUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      const gemini = await analyzeImage(base64);
-      setResult(gemini);
-    } catch (err) {
-      console.log(err);
+      console.log("BASE64 LENGTH:", base64.length);
+
+      if (!base64) {
+        setResult("Failed to convert image to base64.");
+        return;
+      }
+
+      // 🔥 STEP 2: Send to Gemini
+      const response = await analyzeImage(base64);
+
+      setResult(response);
+    } catch (e) {
+      console.log(e);
       setResult("Analysis failed.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Result</Text>
 
-      {!!photoUri && <Image source={{ uri: photoUri }} style={styles.image} />}
+      {photoUri && <Image source={{ uri: photoUri }} style={styles.image} />}
 
       {loading ? (
-        <View style={styles.loading}>
+        <View style={styles.center}>
           <ActivityIndicator size="large" color="#2E5BBA" />
           <Text style={styles.text}>Analyzing...</Text>
         </View>
@@ -62,38 +75,10 @@ export default function ResultScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#111",
-    padding: 20,
-  },
-
-  title: {
-    color: "#fff",
-    fontSize: 22,
-    textAlign: "center",
-  },
-
-  image: {
-    width: "100%",
-    height: 300,
-    borderRadius: 10,
-    marginTop: 10,
-  },
-
-  loading: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-
-  text: {
-    color: "#ccc",
-    marginTop: 10,
-  },
-
-  result: {
-    color: "#0f0",
-    marginTop: 20,
-    fontSize: 16,
-  },
+  container: { flex: 1, backgroundColor: "#111", padding: 20 },
+  title: { color: "#fff", fontSize: 20, textAlign: "center" },
+  image: { width: "100%", height: 300, borderRadius: 10, marginTop: 10 },
+  center: { marginTop: 20, alignItems: "center" },
+  text: { color: "#ccc", marginTop: 10 },
+  result: { color: "#0f0", marginTop: 20 },
 });
