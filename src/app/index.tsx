@@ -32,7 +32,7 @@ export default function CameraScreen() {
       });
 
       router.push({
-        pathname: "/preview",
+        pathname: "/previewScreen",
         params: { photoUri: result.uri },
       });
     } catch (error) {

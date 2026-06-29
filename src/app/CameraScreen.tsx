@@ -1,20 +1,22 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function CameraScreen() {
   const cameraRef = useRef<any>(null);
   const router = useRouter();
-
   const [permission, requestPermission] = useCameraPermissions();
+  const [loading, setLoading] = useState(false);
 
   if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
     return (
-      <View style={styles.permissionContainer}>
-        <Text style={styles.text}>Camera permission required</Text>
+      <View style={styles.center}>
+        <Text style={{ color: "#fff", marginBottom: 10 }}>
+          Camera permission required
+        </Text>
 
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
           <Text style={{ color: "#fff" }}>Grant Permission</Text>
@@ -23,55 +25,78 @@ export default function CameraScreen() {
     );
   }
 
-  async function takePicture() {
-    if (!cameraRef.current) return;
+  const takePicture = async () => {
+    if (!cameraRef.current || loading) return;
 
     try {
-      const result = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
+      setLoading(true);
+
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 1,
+        base64: false,
+        skipProcessing: false,
       });
 
+      console.log("CAPTURE RESULT:", photo);
+
+      const uri = photo?.uri ?? photo?.assets?.[0]?.uri;
+
+      if (!uri) {
+        Alert.alert("Error", "No image captured");
+        return;
+      }
+
       router.push({
-        pathname: "/previewScreen",
-        params: { photoUri: result.uri },
+        pathname: "/previewScreen", // ✅ FIXED HERE
+        params: { photoUri: uri },
       });
-    } catch (err) {
-      console.log(err);
-      Alert.alert("Error", "Camera failed");
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Capture failed");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
       <CameraView ref={cameraRef} style={styles.camera} facing="back" />
 
-      <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
-        <Text style={{ color: "#fff" }}>Capture</Text>
+      <TouchableOpacity
+        style={styles.captureBtn}
+        onPress={takePicture}
+        disabled={loading}
+      >
+        <Text style={{ color: "#fff" }}>
+          {loading ? "Capturing..." : "Capture"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: "#000" },
   camera: { flex: 1 },
 
-  captureButton: {
+  captureBtn: {
     position: "absolute",
     bottom: 40,
     alignSelf: "center",
     backgroundColor: "#2E5BBA",
     padding: 15,
-    paddingHorizontal: 40,
     borderRadius: 30,
   },
 
-  permissionContainer: {
+  center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
 
-  text: { marginBottom: 20 },
-  button: { backgroundColor: "#2E5BBA", padding: 15, borderRadius: 10 },
+  button: {
+    backgroundColor: "#2E5BBA",
+    padding: 12,
+    borderRadius: 10,
+  },
 });

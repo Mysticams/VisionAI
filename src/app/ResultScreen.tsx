@@ -1,21 +1,53 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+
+import { analyzeImage, imageToBase64 } from "../../lib/gemini";
 
 export default function ResultScreen() {
-  const { photoUri } = useLocalSearchParams();
+  const { photoUri } = useLocalSearchParams<{ photoUri: string }>();
+
   const [loading, setLoading] = useState(true);
+  const [result, setResult] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2500);
-    return () => clearTimeout(timer);
+    runAnalysis();
   }, []);
 
+  async function runAnalysis() {
+    try {
+      setLoading(true);
+
+      if (!photoUri) {
+        setResult("No image received.");
+        return;
+      }
+
+      // 🔥 FIX: convert here (NOT in previous screen)
+      const base64 = await imageToBase64(photoUri);
+
+      const gemini = await analyzeImage(base64);
+      setResult(gemini);
+    } catch (err) {
+      console.log(err);
+      setResult("Analysis failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.title}>Result</Text>
 
-      <Image source={{ uri: photoUri as string }} style={styles.image} />
+      {!!photoUri && <Image source={{ uri: photoUri }} style={styles.image} />}
 
       {loading ? (
         <View style={styles.loading}>
@@ -23,25 +55,44 @@ export default function ResultScreen() {
           <Text style={styles.text}>Analyzing...</Text>
         </View>
       ) : (
-        <Text style={styles.result}>Analysis Complete ✔</Text>
+        <Text style={styles.result}>{result}</Text>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#111", padding: 20 },
-  title: { color: "#fff", fontSize: 22, textAlign: "center", marginBottom: 10 },
+  container: {
+    flex: 1,
+    backgroundColor: "#111",
+    padding: 20,
+  },
 
-  image: { width: "100%", height: 300, borderRadius: 10 },
+  title: {
+    color: "#fff",
+    fontSize: 22,
+    textAlign: "center",
+  },
 
-  loading: { marginTop: 20, alignItems: "center" },
+  image: {
+    width: "100%",
+    height: 300,
+    borderRadius: 10,
+    marginTop: 10,
+  },
 
-  text: { color: "#aaa", marginTop: 10 },
+  loading: {
+    marginTop: 20,
+    alignItems: "center",
+  },
+
+  text: {
+    color: "#ccc",
+    marginTop: 10,
+  },
 
   result: {
     color: "#0f0",
-    textAlign: "center",
     marginTop: 20,
     fontSize: 16,
   },
