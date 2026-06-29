@@ -10,11 +10,11 @@ import {
   View,
 } from "react-native";
 
-// 👉 YOUR GEMINI FUNCTION (must accept base64)
 import { analyzeImage } from "../../lib/gemini";
 
 export default function ResultScreen() {
-  const { photoUri } = useLocalSearchParams<{ photoUri: string }>();
+  const rawUri = useLocalSearchParams().photoUri;
+  const photoUri = Array.isArray(rawUri) ? rawUri[0] : rawUri;
 
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState("");
@@ -27,30 +27,21 @@ export default function ResultScreen() {
     try {
       setLoading(true);
 
-      if (!photoUri) {
-        setResult("No image URI received.");
+      if (!photoUri || typeof photoUri !== "string") {
+        setResult("Invalid image");
         return;
       }
 
-      // 🔥 STEP 1: Convert file → base64
       const base64 = await FileSystem.readAsStringAsync(photoUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      console.log("BASE64 LENGTH:", base64.length);
-
-      if (!base64) {
-        setResult("Failed to convert image to base64.");
-        return;
-      }
-
-      // 🔥 STEP 2: Send to Gemini
       const response = await analyzeImage(base64);
 
       setResult(response);
     } catch (e) {
       console.log(e);
-      setResult("Analysis failed.");
+      setResult("Analysis failed");
     } finally {
       setLoading(false);
     }
@@ -58,14 +49,14 @@ export default function ResultScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Result</Text>
+      <Text style={styles.title}>AI Result</Text>
 
       {photoUri && <Image source={{ uri: photoUri }} style={styles.image} />}
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#2E5BBA" />
-          <Text style={styles.text}>Analyzing...</Text>
+          <Text style={{ color: "#ccc" }}>Analyzing...</Text>
         </View>
       ) : (
         <Text style={styles.result}>{result}</Text>
@@ -77,8 +68,7 @@ export default function ResultScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#111", padding: 20 },
   title: { color: "#fff", fontSize: 20, textAlign: "center" },
-  image: { width: "100%", height: 300, borderRadius: 10, marginTop: 10 },
+  image: { width: "100%", height: 300, marginTop: 10 },
   center: { marginTop: 20, alignItems: "center" },
-  text: { color: "#ccc", marginTop: 10 },
   result: { color: "#0f0", marginTop: 20 },
 });

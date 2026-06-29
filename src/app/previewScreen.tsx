@@ -7,16 +7,14 @@ export default function PreviewScreen() {
 
   const uri = Array.isArray(photoUri) ? photoUri[0] : photoUri;
 
-  console.log("PREVIEW URI:", uri);
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Preview</Text>
 
       {uri ? (
-        <Image source={{ uri }} style={styles.image} resizeMode="contain" />
+        <Image source={{ uri }} style={styles.image} />
       ) : (
-        <Text style={styles.error}>No image received</Text>
+        <Text style={{ color: "red" }}>No image received</Text>
       )}
 
       <View style={styles.row}>
@@ -41,32 +39,10 @@ export default function PreviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000",
-    padding: 16,
-  },
-
-  title: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 18,
-    marginBottom: 10,
-  },
-
-  image: {
-    width: "100%",
-    height: 400,
-    backgroundColor: "#111",
-    borderRadius: 10,
-  },
-
-  row: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 15,
-  },
-
+  container: { flex: 1, backgroundColor: "#000", padding: 16 },
+  title: { color: "#fff", textAlign: "center", fontSize: 18 },
+  image: { width: "100%", height: 400, marginTop: 10 },
+  row: { flexDirection: "row", gap: 10, marginTop: 15 },
   btn: {
     flex: 1,
     backgroundColor: "#555",
@@ -74,15 +50,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-
-  btnText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  error: {
-    color: "red",
-    textAlign: "center",
-    marginTop: 20,
-  },
+  btnText: { color: "#fff", fontWeight: "bold" },
 });

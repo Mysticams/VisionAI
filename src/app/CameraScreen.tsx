@@ -1,15 +1,25 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 export default function CameraScreen() {
   const cameraRef = useRef<CameraView>(null);
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  if (!permission) return <View style={styles.container} />;
+  if (!permission) {
+    return <View style={{ flex: 1, backgroundColor: "#000" }} />;
+  }
 
   if (!permission.granted) {
     return (
@@ -33,10 +43,7 @@ export default function CameraScreen() {
 
       const photo = await cameraRef.current?.takePictureAsync({
         quality: 1,
-        skipProcessing: false,
       });
-
-      console.log("CAPTURE:", photo);
 
       if (!photo?.uri) {
         Alert.alert("Error", "No image captured");
@@ -57,10 +64,24 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
-      <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+      <CameraView
+        ref={cameraRef}
+        style={styles.camera}
+        facing="back"
+        onCameraReady={() => setReady(true)}
+      />
+
+      {!ready && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#2E5BBA" />
+          <Text style={{ color: "#fff", marginTop: 10 }}>
+            Starting camera...
+          </Text>
+        </View>
+      )}
 
       <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-        <Text style={{ color: "#fff" }}>
+        <Text style={{ color: "#fff", fontWeight: "bold" }}>
           {loading ? "Capturing..." : "Capture"}
         </Text>
       </TouchableOpacity>
@@ -79,17 +100,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#2E5BBA",
     padding: 15,
     borderRadius: 30,
+    paddingHorizontal: 40,
   },
 
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#000",
   },
 
   button: {
     backgroundColor: "#2E5BBA",
     padding: 12,
     borderRadius: 10,
+  },
+
+  loadingOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
